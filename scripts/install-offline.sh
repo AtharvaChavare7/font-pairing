@@ -12,10 +12,6 @@ python3 -m venv "$ROOT/.venv-ingest"
 "$ROOT/.venv-ingest/bin/pip" install --no-index --find-links="$WHEELHOUSE" "$ROOT/ingest[dev]"
 
 python3 -m venv "$ROOT/.venv-api"
-"$ROOT/.venv-api/bin/pip" install --no-index --find-links="$WHEELHOUSE" -r "$ROOT/api/requirements.txt"
+"$ROOT/.venv-api/bin/pip" install --no-index --find-links="$WHEELHOUSE" -r "$ROOT/api/requirements-dev.txt"
 
-if [[ -d "$ROOT/web/node_modules" ]]; then
-  echo "web/node_modules present — Next.js dev server available via make web"
-else
-  echo "web/node_modules missing — use make web-static (no npm required)"
-fi
+echo "Installed. Run: make ingest && make api   (UI at http://localhost:8000/ui)"

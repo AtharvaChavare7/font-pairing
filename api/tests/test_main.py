@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 import corpus
 from main import app
 
-has_corpus = corpus.FAMILIES_PARQUET.is_file()
+has_corpus = corpus.FAMILIES_JSON.is_file()
 needs_corpus = pytest.mark.skipif(not has_corpus, reason="run `fontpair-ingest run` first")
 
 
@@ -18,9 +18,10 @@ def client():
 
 
 def test_health(client) -> None:
-    response = client.get("/health")
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    for path in ("/api/health", "/health"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
 
 
 @needs_corpus

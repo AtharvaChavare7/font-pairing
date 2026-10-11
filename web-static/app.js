@@ -930,7 +930,7 @@ function init() {
     { passive: true },
   );
 
-  fetch(`${API_BASE}/health`)
+  fetch(`${API_BASE}/api/health`)
     .then((r) => r.json())
     .then((h) => {
       if (h.families) $("#family-count").textContent = `${h.families.toLocaleString()} Google Fonts families`;

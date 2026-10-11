@@ -44,7 +44,8 @@ def index() -> RedirectResponse:
     return RedirectResponse("/ui/")
 
 
-@app.get("/health")
+@app.get("/api/health")
+@app.get("/health", include_in_schema=False)
 def health() -> dict:
     c = get_corpus()
     return {"status": "ok", "corpus_loaded": c is not None, "families": len(c) if c else 0}
@@ -113,7 +114,12 @@ class Feedback(BaseModel):
 
 @app.post("/api/feedback")
 def feedback(payload: Feedback) -> dict:
-    FEEDBACK_LOG.parent.mkdir(parents=True, exist_ok=True)
-    with FEEDBACK_LOG.open("a", encoding="utf-8") as f:
-        f.write(json.dumps({**payload.model_dump(), "ts": time.time()}) + "\n")
+    line = json.dumps({**payload.model_dump(), "ts": time.time()})
+    try:
+        FEEDBACK_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with FEEDBACK_LOG.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        # read-only filesystem (serverless): keep the signal in the logs instead
+        print(f"feedback {line}", flush=True)
     return {"status": "received"}

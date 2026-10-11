@@ -1,4 +1,9 @@
-"""Load Parquet feature store into numpy at startup."""
+"""Load the feature-store snapshot into numpy.
+
+The ingest pipeline writes api/data/families.json + embeddings.npy. They live
+inside the API package so a deployed API (e.g. a Vercel service rooted at api/)
+ships its own data, and reading JSON avoids a ~90 MB pyarrow dependency.
+"""
 
 from __future__ import annotations
 
@@ -9,9 +14,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-DATA_OUT = Path(__file__).resolve().parents[1] / "data" / "out"
-FAMILIES_PARQUET = DATA_OUT / "families.parquet"
-EMBED_NPY = DATA_OUT / "embeddings.npy"
+SNAPSHOT_DIR = Path(__file__).resolve().parent / "data"
+FAMILIES_JSON = SNAPSHOT_DIR / "families.json"
+EMBED_NPY = SNAPSHOT_DIR / "embeddings.npy"
 
 # Metrics shown on the "typographic DNA" strip in the UI.
 DNA_METRICS = ["xh_ratio", "width", "weight", "contrast", "aperture", "serif"]
@@ -49,6 +54,7 @@ class Corpus:
 
 
 _corpus: Corpus | None = None
+_attempted = False
 
 
 def _smooth(x: np.ndarray, lo: float, hi: float) -> np.ndarray:
@@ -110,14 +116,16 @@ def _styled_name(name: str, root: str) -> bool:
     return not rest or any(w in _STYLE_WORDS for w in rest)
 
 
-def load_corpus(path: Path = FAMILIES_PARQUET, emb_path: Path = EMBED_NPY) -> Corpus | None:
-    """Load corpus from data/out/ if available."""
-    global _corpus
+def load_corpus(path: Path = FAMILIES_JSON, emb_path: Path = EMBED_NPY) -> Corpus | None:
+    """Load the snapshot from api/data/ if available."""
+    global _corpus, _attempted
+    _attempted = True
     if not path.is_file() or not emb_path.is_file():
         _corpus = None
         return None
 
-    df = pd.read_parquet(path).reset_index(drop=True)
+    df = pd.read_json(path, orient="records").reset_index(drop=True)
+    df["clone_group_id"] = df["clone_group_id"].where(df["clone_group_id"].notna(), None)
     emb = np.load(emb_path)
     cat = df["category"].map(CATEGORY_KEYS).fillna("display").to_numpy()
 
@@ -151,6 +159,9 @@ def load_corpus(path: Path = FAMILIES_PARQUET, emb_path: Path = EMBED_NPY) -> Co
 
 
 def get_corpus() -> Corpus | None:
+    # lazy: serverless runtimes may not run ASGI startup events
+    if _corpus is None and not _attempted:
+        load_corpus()
     return _corpus
 
 

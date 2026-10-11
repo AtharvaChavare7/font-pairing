@@ -11,6 +11,7 @@ import pandas as pd
 import typer
 
 from fontpair_ingest.config import (
+    API_SNAPSHOT_DIR,
     CLONE_FAMILIES_PARQUET,
     DATA_OUT,
     DATA_WORK,
@@ -112,6 +113,11 @@ def run_api_ingest(limit: int | None = None, workers: int | None = None, refresh
     np.save(EMBED_NPY, emb)
     typer.echo(f"Wrote {FAMILIES_PARQUET} ({len(df)} families, {len(FEATURE_COLUMNS)} features)")
     typer.echo(f"Wrote {EMBED_NPY}")
+
+    API_SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    df.to_json(API_SNAPSHOT_DIR / "families.json", orient="records")
+    np.save(API_SNAPSHOT_DIR / "embeddings.npy", emb)
+    typer.echo(f"Wrote API snapshot to {API_SNAPSHOT_DIR}")
 
 
 def run_clone_discovery(corpus_root: Path | None = None) -> None:

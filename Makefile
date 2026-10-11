@@ -1,4 +1,4 @@
-.PHONY: ingest ingest-clone evaluate api web web-static test install install-offline venv-ingest venv-api
+.PHONY: ingest ingest-clone evaluate api web test install install-offline venv-ingest venv-api
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 VENV_INGEST := $(ROOT).venv-ingest
@@ -22,8 +22,7 @@ venv-api:
 
 install: venv-ingest venv-api
 	$(PY_INGEST) -m pip install -e "$(ROOT)ingest[dev]"
-	$(PY_API) -m pip install -r $(ROOT)api/requirements.txt
-	cd $(ROOT)web && npm install
+	$(PY_API) -m pip install -r $(ROOT)api/requirements-dev.txt
 
 install-offline:
 	@bash "$(ROOT)scripts/install-offline.sh"
@@ -42,15 +41,8 @@ evaluate:
 api:
 	cd $(ROOT)api && $(PY_API) -m uvicorn main:app --reload --port 8000
 
+# Static UI on :3001 calling the API on :8000 (or use http://localhost:8000/ui)
 web:
-	@if [ -d "$(ROOT)web/node_modules" ]; then \
-		cd $(ROOT)web && npm run dev; \
-	else \
-		$(MAKE) web-static; \
-	fi
-
-web-static:
-	@echo "Next.js deps missing — static UI at http://localhost:3001 (or http://localhost:8000/ui via make api) (API CORS enabled)"
 	cd $(ROOT)web-static && $(PY_API) -m http.server 3001
 
 test:

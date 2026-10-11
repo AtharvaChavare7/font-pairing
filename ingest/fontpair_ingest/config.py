@@ -21,6 +21,9 @@ SUBSET_DIR = DATA_RAW / "gf-subsets"
 FAMILIES_PARQUET = DATA_OUT / "families.parquet"
 EMBED_NPY = DATA_OUT / "embeddings.npy"
 
+# Snapshot the API reads (committed, so a deployed API ships its own data)
+API_SNAPSHOT_DIR = REPO_ROOT / "api" / "data"
+
 GOOGLE_LICENSE_DIRS = ("ofl", "apache", "ufl")
 HOSTABLE_LICENSE_DIRS = frozenset(GOOGLE_LICENSE_DIRS)
 

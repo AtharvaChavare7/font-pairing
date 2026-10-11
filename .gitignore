@@ -1,5 +1,5 @@
 # Data (Google Fonts clone is several GB)
-data/
+/data/
 
 # Python
 __pycache__/
